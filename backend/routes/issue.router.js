@@ -1,12 +1,16 @@
-const express=require("express")
-const issueController=require("../controllers/issueController")
+const express = require("express");
+const issueController = require("../controllers/issueController");
+const { authenticate } = require("../middleware/authMiddleware");
 
-const issueRouter=express.Router()
+const issueRouter = express.Router();
 
-issueRouter.post("/issue/create",issueController.createIssue)
-issueRouter.put("/issue/update/:id",issueController.updateIssueById)
-issueRouter.delete("/issue/delete/:id",issueController.deleteIssueById)
-issueRouter.get("/issue/all",issueController.getAllIssues)
-issueRouter.get("/issue/:id",issueController.getIssueById)
+// Repository-scoped routes — :id is the repository id
+issueRouter.post("/issue/create/:id", authenticate, issueController.createIssue);
+issueRouter.get("/issue/all/:id", issueController.getAllIssues);
 
-module.exports=issueRouter
+// Single-issue routes — :id is the issue id
+issueRouter.put("/issue/update/:id", authenticate, issueController.updateIssueById);
+issueRouter.delete("/issue/delete/:id", authenticate, issueController.deleteIssueById);
+issueRouter.get("/issue/single/:id", issueController.getIssueById);
+
+module.exports = issueRouter;

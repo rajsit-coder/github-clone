@@ -1,37 +1,52 @@
-const mongoose=require("mongoose")
-const {Schema}=mongoose
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-const UserSchema=new Schema({
-    username:{
-        type:String,
-        required:true,
-        unique:true
+const UserSchema = new Schema(
+    {
+        username: {
+            type: String,
+            required: true,
+            unique: true,
+            trim: true,
+        },
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            trim: true,
+            lowercase: true,
+        },
+        password: {
+            type: String,
+        },
+        repositories: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Repository",
+            },
+        ],
+        followedUsers: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
+        starRepos: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Repository",
+            },
+        ],
     },
-    email:{
-        type:String,
-        required:true,
-        unique:true,
-    },
-    password:{
-        type:String
-    },
-    repositories:[{
-        default:[],
-        type:Schema.Types.ObjectId,
-        ref:"Repository"
-    }],
-    followedUsers:[{
-        default:[],
-        type:Schema.Types.ObjectId,
-        ref:"User"
-    }],
-    starRepos:[{
-        default:[],
-        type:Schema.Types.ObjectId,
-        ref:"Repository"
-    }]
-})
+    { timestamps: true }
+);
 
+// Never return the password hash in any JSON response
+UserSchema.methods.toJSON = function () {
+    const obj = this.toObject();
+    delete obj.password;
+    return obj;
+};
 
-const User = mongoose.model("User",UserSchema)
+const User = mongoose.model("User", UserSchema);
 module.exports = User;

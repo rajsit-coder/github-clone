@@ -1,108 +1,114 @@
-const express=require("express")
-const dotenv=require("dotenv")
-const cors=require("cors")
-const mongoose=require("mongoose")
-const bodyParser=require("body-parser")
-const http=require("http")
-const {Server}=require("socket.io")
-const mainRouter=require("./routes/main.router")
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const http = require("http");
+const { Server } = require("socket.io");
+const mainRouter = require("./routes/main.router");
 
 const yargs = require("yargs");
-const {hideBin} =require("yargs/helpers")
+const { hideBin } = require("yargs/helpers");
 
-const {initRepo}=require("./controllers/init");
+const { initRepo } = require("./controllers/init");
 const { addRepo } = require("./controllers/add");
 const { commitRepo } = require("./controllers/commit");
 const { pushRepo } = require("./controllers/push");
 const { pullRepo } = require("./controllers/pull");
 const { revertRepo } = require("./controllers/revert");
 
-dotenv.config()
-
+dotenv.config();
 
 yargs(hideBin(process.argv))
-.command("start","Starts a new server",{},startServer)
-.command('init',"Init repo",{},initRepo)
-.command("add <file>",'Add a file to repo',(yargs)=>{
-    yargs.positional("file",{ 
-        describe:"File to add to the staging area",
-        type:"String",
-    })
-},
-(argv)=>{
-    addRepo(argv.file)
-}
-)
-.command("commit <message>","commit the stagged file",(yargs)=>{
-    yargs.positional("message",{
-describe:"Commit message",
-type:"String",
-    })
-},
-(argv)=>{
-    commitRepo(argv.message)
-}
-)
-.command("push","push commits",{},pushRepo)
-.command("pull","pull commits",{},pullRepo)
-.command("revert <commitID>","Revert to a specific commit",(yargs)=>{
-    yargs.positional("commitID",{
-        describe:"Comit ID to revert to",
-        type:"String",
-    })
-},
-(argv)=>{
-    revertRepo(argv.commitID)
-}
-)
-.demandCommand(1,"You need atleast one command")
-.help().argv;
+    .command("start", "Starts the API server", {}, startServer)
+    .command("init", "Initialize a new apnaGit repository", {}, initRepo)
+    .command(
+        "add <file>",
+        "Add a file to the staging area",
+        (yargs) => {
+            yargs.positional("file", {
+                describe: "File to add to the staging area",
+                type: "string",
+            });
+        },
+        (argv) => {
+            addRepo(argv.file);
+        }
+    )
+    .command(
+        "commit <message>",
+        "Commit the staged files",
+        (yargs) => {
+            yargs.positional("message", {
+                describe: "Commit message",
+                type: "string",
+            });
+        },
+        (argv) => {
+            commitRepo(argv.message);
+        }
+    )
+    .command("push", "Push commits to remote (S3)", {}, pushRepo)
+    .command("pull", "Pull commits from remote (S3)", {}, pullRepo)
+    .command(
+        "revert <commitID>",
+        "Revert to a specific commit",
+        (yargs) => {
+            yargs.positional("commitID", {
+                describe: "Commit ID to revert to",
+                type: "string",
+            });
+        },
+        (argv) => {
+            revertRepo(argv.commitID);
+        }
+    )
+    .demandCommand(1, "You need at least one command")
+    .help()
+    .argv;
 
-function startServer(){
-const app=express()
-const port=process.env.PORT || 3000
+function startServer() {
+    const app = express();
+    const port = process.env.PORT || 3000;
 
-app.use(bodyParser.json())
-app.use(express.json())
-app.use("/",mainRouter)
+    // ── Middleware ──────────────────────────────
+    app.use(
+        cors({
+            origin: "http://localhost:5173",
+            methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowedHeaders: ["Content-Type", "Authorization"],
+        })
+    );
 
-const mongoURI=process.env.MONGODB_URI
+    app.use(express.json());
 
-mongoose.connect(mongoURI).then(()=>console.log("MongoB connected")).catch((err)=>console.error("Unable to connect : ",err))
+    // ── Routes ─────────────────────────────────
+    app.use("/", mainRouter);
 
-app.use(cors({origin:"*"}))
+    // ── Database ───────────────────────────────
+    const mongoURI = process.env.MONGODB_URI;
 
-app.get("/",(req,res)=>{
-    res.send("Welcome")
-})
-let user ="test"
-const httpServer=http.createServer(app)
-const io=new Server(httpServer,{
-    cors:{
-        origin:"*",
-        methods:["GET","POST"],
-    },
-})
+    mongoose
+        .connect(mongoURI)
+        .then(() => console.log("MongoDB connected"))
+        .catch((err) => console.error("Unable to connect to MongoDB:", err));
 
-io.on("connection",(socket)=>{
-    socket.on("joinRoom",(userID)=>{
-        user=userID
-        console.log("=======")
-        console.log(user)
-        console.log("=======")
-        socket.join(userID)
-    })
-})
+    // ── HTTP + Socket.IO Server ────────────────
+    const httpServer = http.createServer(app);
 
+    const io = new Server(httpServer, {
+        cors: {
+            origin: "http://localhost:5173",
+            methods: ["GET", "POST"],
+        },
+    });
 
-const db=mongoose.connection
+    io.on("connection", (socket) => {
+        socket.on("joinRoom", (userID) => {
+            socket.join(userID);
+        });
+    });
 
-db.once("open",async ()=>{
-    console.log("CRUD operation called")
-})
-
-
-httpServer.listen(port,()=>{
-    console.log(`Server is running on PORT ${port}`)
-})
+    httpServer.listen(port, () => {
+        console.log(`Server is running on PORT ${port}`);
+    });
 }

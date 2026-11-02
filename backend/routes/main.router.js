@@ -1,17 +1,13 @@
-const express=require("express")
-const userRouter=require("./user.router");
-const repoRouter = require("./repo.router");
-const issueRouter = require("./issue.router");
+const express = require("express");
 
+const mainRouter = express.Router();
+mainRouter.use(require("./user.router"));
+mainRouter.use(require("./repo.router"));
+mainRouter.use(require("./issue.router"));
+mainRouter.use(require("./file.router"));
+mainRouter.use(require("./comment.router"));
+mainRouter.use(require("./search.router"));
 
-const mainRouter=express.Router();
-mainRouter.use(userRouter)
-mainRouter.use(repoRouter)
-mainRouter.use(issueRouter)
+mainRouter.get("/", (_req, res) => res.send("Welcome"));
 
-
-mainRouter.get("/",(req,res)=>{
-    res.send("Welcome")
-})
-
-module.exports=mainRouter
+module.exports = mainRouter;

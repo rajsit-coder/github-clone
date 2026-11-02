@@ -1,162 +1,233 @@
-const mongoose=require("mongoose")
-const Repository=require("../models/repoModel")
-const Issue=require("../models/issueModel")
-const User=require("../models/userModel")
+const Repository = require("../models/repoModel");
+const User       = require("../models/userModel");
+const Issue      = require("../models/issueModel");
+const File       = require("../models/fileModel");
+const Comment    = require("../models/commentModel");
 
-const createRepository =async (req,res)=>{
-    const {owner,name,issues,content,description,visibility}=req.body
+// ── CRUD ─────────────────────────────────────────────
 
+const createRepository = async (req, res) => {
+    const { name, description, visibility } = req.body;
+    const owner = req.userId;
     try {
-        if(!name){
-            return res.status(400).json({error:"Repository name is required!"})
-        }
+        if (!name) return res.status(400).json({ error: "Repository name is required!" });
+        if (await Repository.findOne({ name }))
+            return res.status(400).json({ error: "A repository with this name already exists!" });
 
-        if(!mongoose.Types.ObjectId.isValid(owner)){
-            return res.status(400).json({error:"Invalid User ID!"})
-        }
-
-        const newRepository=new Repository({
-            name,
-            description,
-            visibility,
-            owner,
-            content,
-            issues
-        })
-
-        const result=await newRepository.save();
-
-        res.status(201).json({
-            message:"Repository created!",
-            repositoryID:result._id
-        })
+        const repo = await Repository.create({
+            name, description: description || "",
+            visibility: visibility !== undefined ? visibility : true,
+            owner, content: [], issues: [], collaborators: [], forkedFrom: null,
+        });
+        await User.findByIdAndUpdate(owner, { $push: { repositories: repo._id } });
+        res.status(201).json({ message: "Repository created!", repositoryID: repo._id });
     } catch (err) {
-        console.error("Error during repository creation : ",err)
-        res.status(500).send("Server error!")
+        console.error("createRepository:", err);
+        res.status(500).json({ error: "Server error!" });
     }
-}
+};
 
-const getAllRepositories=async (req,res)=>{
+const getAllRepositories = async (req, res) => {
     try {
-        const repositories = await Repository.find({}).populate("owner").populate("issues")
-
-        res.json(repositories)
+        const repos = await Repository.find({})
+            .populate("owner", "username email")
+            .populate("collaborators", "username email");
+        res.json(repos);
     } catch (err) {
-        console.error("Error during fetching repository",err)
-        res.status(500).send("Server error!")
+        console.error("getAllRepositories:", err);
+        res.status(500).json({ error: "Server error!" });
     }
-}
+};
 
-const fetchRepositoryById=async (req,res)=>{
-    const {id}=req.params
-    try{
-    const repository=await Repository.find({_id:id}).populate("owner").populate("issues")
-
-    res.json(repository)
-    }catch(err){
-        console.error("Error during fetching fetching repository : ",err)
-        res.status(500).send("Server error!")
-    }
-}
-
-const fetchRepositoryByName=async (req,res)=>{
-    const {name}=req.params
+const fetchRepositoryById = async (req, res) => {
     try {
-        const repository=await Repository.find({name}).populate("owner").populate("issues")
+        const repo = await Repository.findById(req.params.id)
+            .populate("owner", "username email")
+            .populate("issues")
+            .populate("collaborators", "username email")
+            .populate("forkedFrom", "name owner");
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        res.json(repo);
     } catch (err) {
-        console.error("Error during fetching repository : ",err)
-        res.status(500).send("Server error!")
+        console.error("fetchRepositoryById:", err);
+        res.status(500).json({ error: "Server error!" });
     }
-}
+};
 
-const fetchRepositoryForCurrentUser=async (req,res)=>{
-    const userId=req.User
-
+const fetchRepositoryByName = async (req, res) => {
     try {
-        const repositories=await Repository.find({owner:userId})
-
-        if(!repositories || repositories.length == 0){
-            return res.status(404).json({error:"User repositories not found!"})
-        }
-
-        res.json({message:"Repositories found!",repositories})
+        const repo = await Repository.findOne({ name: req.params.name })
+            .populate("owner", "username email")
+            .populate("issues")
+            .populate("collaborators", "username email");
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        res.json(repo);
     } catch (err) {
-        console.error("Error during fetching repositories : ",err)
-        res.status(500).send("Server error!")
+        console.error("fetchRepositoryByName:", err);
+        res.status(500).json({ error: "Server error!" });
     }
-}
+};
 
-const updateRepositoryById=async (req,res)=>{
-    const {id}=req.params
-    const {content,description}=req.body
-
+const fetchRepositoryForCurrentUser = async (req, res) => {
     try {
-        const repository=await Repository.findById(id)
-        if(!repository){
-            return res.status(404).json({error:"User repositories not found!"})
-        }
-        repository.content.push(content)
-        repository.description=description
-
-        const updatedRepository=await repository.save()
-
-        res.json({
-            message:"Repository updated successfully!",
-            repository:updatedRepository 
-        })
+        const repos = await Repository.find({ owner: req.params.userId })
+            .populate("issues")
+            .populate("owner", "username email");
+        res.json({ message: "Repositories found!", repositories: repos });
     } catch (err) {
-        console.error("Error during fetching repository : ",err)
-        res.status(500).send("Server error!")
+        console.error("fetchRepositoryForCurrentUser:", err);
+        res.status(500).json({ error: "Server error!" });
     }
-}
+};
 
-const toggleVisibilityById=async (req,res)=>{
-    const {id}=req.params
+const updateRepositoryById = async (req, res) => {
+    const { content, description } = req.body;
+    try {
+        const repo = await Repository.findById(req.params.id);
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        if (String(repo.owner) !== String(req.userId))
+            return res.status(403).json({ error: "Permission denied!" });
+        if (content)              repo.content.push(content);
+        if (description !== undefined) repo.description = description;
+        const updated = await repo.save();
+        res.json({ message: "Repository updated!", repository: updated });
+    } catch (err) {
+        console.error("updateRepositoryById:", err);
+        res.status(500).json({ error: "Server error!" });
+    }
+};
 
-    try{
-        const repository=await Repository.findById(id)
-        if(!repository){
-            res.status(404).json({error:"Repository not found!"})
+const toggleVisibilityById = async (req, res) => {
+    try {
+        const repo = await Repository.findById(req.params.id);
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        if (String(repo.owner) !== String(req.userId))
+            return res.status(403).json({ error: "Permission denied!" });
+        repo.visibility = !repo.visibility;
+        const updated = await repo.save();
+        res.json({ message: "Visibility updated!", repository: updated });
+    } catch (err) {
+        console.error("toggleVisibilityById:", err);
+        res.status(500).json({ error: "Server error!" });
+    }
+};
+
+const deleteRepositoryById = async (req, res) => {
+    try {
+        const repo = await Repository.findById(req.params.id);
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        if (String(repo.owner) !== String(req.userId))
+            return res.status(403).json({ error: "Permission denied!" });
+
+        const issueIds = repo.issues.map((i) => i._id || i);
+        await Issue.deleteMany({ repository: req.params.id });
+        await File.deleteMany({ repository: req.params.id });
+        if (issueIds.length)
+            await Comment.deleteMany({ issue: { $in: issueIds } });
+        await User.findByIdAndUpdate(repo.owner, {
+            $pull: { repositories: repo._id, starRepos: repo._id },
+        });
+        await Repository.findByIdAndDelete(req.params.id);
+        res.json({ message: "Repository deleted successfully" });
+    } catch (err) {
+        console.error("deleteRepositoryById:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// ── Fork ─────────────────────────────────────────────
+
+const forkRepository = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.userId;
+    try {
+        const original = await Repository.findById(id).populate("owner", "username");
+        if (!original) return res.status(404).json({ error: "Repository not found!" });
+
+        let forkName = original.name;
+        let counter = 1;
+        while (await Repository.findOne({ name: forkName })) {
+            forkName = `${original.name}-${counter++}`;
         }
 
-        repository.visibility=!repository.visibility
+        const forked = await Repository.create({
+            name: forkName, description: original.description,
+            visibility: true, owner: userId,
+            content: [], issues: [], collaborators: [], forkedFrom: id,
+        });
 
-        const updatedRepository=await repository.save()
-
-        res.json({
-            message:"Repository updated successfully!",
-            repository:updatedRepository
-        })
-    }catch(err){
-        console.error("Error during toggling repository : ",err)
-        res.status(500).send("Server error!")
-    }
-}
-
-const deleteRepositoryById=async (req,res)=>{
-    const {id}=req.params
-
-    try{
-        const repository=await Repository.findByIdAndDelete(id)
-
-        if(!repository){
-            res.status(404).json({error:"Repository not found!"})
+        // Copy files
+        const files = await File.find({ repository: id });
+        for (const f of files) {
+            await File.create({ filename: f.filename, content: f.content, repository: forked._id });
         }
 
-        res.json({message:"Repository deleted successfully"})
-    }catch(err){
-        console.error("Error during deleting Repository : ",err)
-        res.status(500).send("Server error")
+        await User.findByIdAndUpdate(userId, { $push: { repositories: forked._id } });
+        res.status(201).json({ message: "Forked!", repositoryID: forked._id });
+    } catch (err) {
+        console.error("forkRepository:", err);
+        res.status(500).json({ error: "Server error" });
     }
-}
+};
 
-module.exports={
-    createRepository,
-    getAllRepositories,
-    fetchRepositoryById,
-    fetchRepositoryByName,
-    fetchRepositoryForCurrentUser,
-    updateRepositoryById,
-    toggleVisibilityById,
-    deleteRepositoryById
-}
+// ── Collaborators ─────────────────────────────────────
+
+const getCollaborators = async (req, res) => {
+    try {
+        const repo = await Repository.findById(req.params.id)
+            .populate("collaborators", "username email");
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        res.json(repo.collaborators);
+    } catch (err) {
+        console.error("getCollaborators:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+const addCollaborator = async (req, res) => {
+    const { userId: collabId } = req.body;
+    try {
+        const repo = await Repository.findById(req.params.id);
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        if (String(repo.owner) !== String(req.userId))
+            return res.status(403).json({ error: "Only the owner can add collaborators!" });
+        if (String(repo.owner) === String(collabId))
+            return res.status(400).json({ error: "Owner is already part of the repository!" });
+        const user = await User.findById(collabId);
+        if (!user) return res.status(404).json({ error: "User not found!" });
+        if (repo.collaborators.some((c) => String(c) === String(collabId)))
+            return res.status(400).json({ error: "User is already a collaborator!" });
+
+        repo.collaborators.push(collabId);
+        await repo.save();
+        const updated = await Repository.findById(req.params.id)
+            .populate("collaborators", "username email");
+        res.json({ message: "Collaborator added!", collaborators: updated.collaborators });
+    } catch (err) {
+        console.error("addCollaborator:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+const removeCollaborator = async (req, res) => {
+    const { userId: collabId } = req.params;
+    try {
+        const repo = await Repository.findById(req.params.id);
+        if (!repo) return res.status(404).json({ error: "Repository not found!" });
+        if (String(repo.owner) !== String(req.userId))
+            return res.status(403).json({ error: "Only the owner can remove collaborators!" });
+        repo.collaborators = repo.collaborators.filter((c) => String(c) !== String(collabId));
+        await repo.save();
+        res.json({ message: "Collaborator removed!" });
+    } catch (err) {
+        console.error("removeCollaborator:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+module.exports = {
+    createRepository, getAllRepositories, fetchRepositoryById,
+    fetchRepositoryByName, fetchRepositoryForCurrentUser,
+    updateRepositoryById, toggleVisibilityById, deleteRepositoryById,
+    forkRepository, getCollaborators, addCollaborator, removeCollaborator,
+};

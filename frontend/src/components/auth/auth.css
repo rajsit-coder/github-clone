@@ -1,0 +1,124 @@
+/* ════════════════════════════════════════════════════
+   Auth Pages — GitHub Style
+   ════════════════════════════════════════════════════ */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px 64px;
+  background: var(--color-canvas-default);
+}
+
+.auth-logo { margin-bottom: 16px; color: var(--color-fg-default); }
+.auth-logo:hover { opacity: .8; }
+
+.auth-page h2 {
+  font-size: 24px; font-weight: 300;
+  color: var(--color-fg-default);
+  margin-bottom: 16px;
+}
+
+/* Card */
+.auth-card {
+  width: 100%; max-width: 340px;
+  padding: 16px;
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+/* Labels & inputs */
+.auth-card label {
+  display: block;
+  font-size: 14px; font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--color-fg-default);
+}
+
+.auth-card .auth-field { margin-bottom: 12px; }
+
+.auth-card input[type=text],
+.auth-card input[type=email],
+.auth-card input[type=password] {
+  display: block; width: 100%;
+  padding: 5px 12px; min-height: 32px;
+  background: var(--color-canvas-inset);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  color: var(--color-fg-default);
+  font-size: 14px; line-height: 20px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.auth-card input:focus {
+  border-color: var(--color-accent-emphasis);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+.auth-card input::placeholder { color: var(--color-fg-subtle); }
+.auth-card input:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Forgot password row */
+.auth-password-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 6px;
+}
+.auth-password-row a { font-size: 12px; color: var(--color-accent-fg); }
+
+/* Submit button */
+.auth-submit {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 32px;
+  padding: 5px 16px;
+  background: var(--color-success-emphasis);
+  border: 1px solid rgba(240,246,252,.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  transition: background .12s;
+  margin-top: 4px;
+}
+.auth-submit:hover:not(:disabled) { background: #2ea043; }
+.auth-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Password hint */
+.auth-hint {
+  font-size: 12px;
+  color: var(--color-fg-muted);
+  margin-top: -6px; margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+/* Sign-up / Sign-in link box below card */
+.auth-alt-card {
+  width: 100%; max-width: 340px;
+  padding: 15px;
+  text-align: center;
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--color-fg-default);
+}
+.auth-alt-card a { color: var(--color-accent-fg); }
+
+/* Loader inside button */
+.auth-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: gh-spin .65s linear infinite;
+}
+
+/* Footer */
+.auth-footer {
+  display: flex; justify-content: center; flex-wrap: wrap;
+  gap: 16px; margin-top: 48px;
+}
+.auth-footer a { font-size: 12px; color: var(--color-fg-muted); }
+.auth-footer a:hover { text-decoration: underline; color: var(--color-accent-fg); }
+
+@media (max-width: 480px) { .auth-page { padding: 32px 12px 48px; } }

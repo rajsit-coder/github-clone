@@ -1,0 +1,195 @@
+/* ════════════════════════════════════════════════════
+   Dashboard — GitHub Home Layout
+   ════════════════════════════════════════════════════ */
+.dashboard-layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: grid;
+  grid-template-columns: 256px 1fr 296px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ═══════════════════════════════════════════════════
+   Left Sidebar
+   ═══════════════════════════════════════════════════ */
+.dashboard-sidebar { display: flex; flex-direction: column; gap: 0; }
+
+/* User card */
+.dashboard-user-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--color-border-muted);
+  margin-bottom: 16px;
+  text-decoration: none; color: inherit;
+}
+.dashboard-user-card:hover { text-decoration: none; }
+.dashboard-user-avatar {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 50%;
+  background: #21262d;
+  border: 1px solid rgba(240,246,252,.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+  color: var(--color-fg-default);
+}
+.dashboard-user-info { min-width: 0; }
+.dashboard-user-name {
+  font-size: 14px; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dashboard-user-email {
+  font-size: 12px; color: var(--color-fg-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Sidenav */
+.dashboard-sidenav {
+  display: flex; flex-direction: column; gap: 0;
+  margin-bottom: 16px;
+}
+.dashboard-sidenav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px; color: var(--color-fg-default);
+  text-decoration: none;
+  transition: background .1s;
+}
+.dashboard-sidenav-item:hover { background: var(--color-canvas-subtle); text-decoration: none; }
+.dashboard-sidenav-item svg { color: var(--color-fg-muted); }
+
+/* Recent repos */
+.dashboard-recent-heading {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px 4px;
+  font-size: 12px; font-weight: 600;
+  color: var(--color-fg-default);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.dashboard-recent-heading a {
+  font-size: 12px; font-weight: 500;
+  color: var(--color-accent-fg);
+  text-transform: none; letter-spacing: 0;
+}
+.dashboard-recent-repo {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  color: var(--color-fg-default);
+  text-decoration: none;
+  transition: background .1s;
+}
+.dashboard-recent-repo:hover { background: var(--color-canvas-subtle); text-decoration: none; }
+
+/* ═══════════════════════════════════════════════════
+   Main Feed
+   ═══════════════════════════════════════════════════ */
+.dashboard-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+
+.dashboard-feed-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.dashboard-feed-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--color-fg-default);
+}
+
+.dashboard-search-input { max-width: 100%; }
+.dashboard-repo-list  { display: flex; flex-direction: column; }
+
+/* Repo row in feed */
+.repo-feed-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border-muted);
+  gap: 12px;
+}
+.repo-feed-row:last-child { border-bottom: none; }
+.repo-feed-row-content { flex: 1; min-width: 0; }
+
+.repo-feed-row-name-row {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.repo-feed-row-name {
+  font-size: 14px; font-weight: 600;
+  color: var(--color-accent-fg);
+}
+.repo-feed-row-name:hover { text-decoration: underline; }
+
+.repo-feed-row-desc {
+  font-size: 13px; color: var(--color-fg-muted);
+  margin-bottom: 6px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 520px;
+}
+
+.repo-feed-row-meta { display: flex; align-items: center; gap: 16px; }
+.repo-feed-row-meta-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--color-fg-muted);
+}
+.lang-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--color-accent-fg);
+  display: inline-block;
+}
+
+/* ═══════════════════════════════════════════════════
+   Right Sidebar — Explore
+   ═══════════════════════════════════════════════════ */
+.dashboard-right-sidebar {}
+
+.explore-card {
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  padding: 16px;
+}
+.explore-heading {
+  font-size: 14px; font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border-muted);
+}
+
+.explore-repo {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border-muted);
+}
+.explore-repo:last-of-type { border-bottom: none; }
+.explore-repo-name {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500;
+  color: var(--color-fg-default);
+  text-decoration: none;
+  margin-bottom: 2px;
+}
+.explore-repo-name:hover { text-decoration: underline; color: var(--color-accent-fg); }
+.explore-repo-desc {
+  font-size: 12px; color: var(--color-fg-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.explore-see-more {
+  display: block;
+  font-size: 13px; color: var(--color-accent-fg);
+  margin-top: 12px; padding-top: 8px;
+  border-top: 1px solid var(--color-border-muted);
+}
+
+/* ═══════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .dashboard-layout { grid-template-columns: 220px 1fr; }
+  .dashboard-right-sidebar { display: none; }
+}
+@media (max-width: 768px) {
+  .dashboard-layout { grid-template-columns: 1fr; padding: 16px; }
+  .dashboard-sidebar { display: none; }
+}
